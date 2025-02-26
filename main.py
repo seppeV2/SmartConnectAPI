@@ -193,7 +193,7 @@ async def main(page: ft.Page):
         leading = ft.Text(),
         title= ft.SafeArea(
             content= ft.Text(
-                value='Smart Connect API Test Page', 
+                value='Smart Connect API', 
                 text_align=ft.TextAlign.CENTER,
                 size=40,
                 weight=ft.FontWeight.BOLD,
