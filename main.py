@@ -111,8 +111,18 @@ class CallCard(ft.Container):
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             ),        
-            content = ft.Text(body),
+            content = ft.ListView(
+                controls = [
+                    ft.Container(
+                        content = ft.Text(body),
+                        expand=True,
+                        width=page.width*0.9
+                    )
+                ],  
+                width=page.width*0.9
+            ),
             open=False,
+            
         )
 
         super().__init__(
