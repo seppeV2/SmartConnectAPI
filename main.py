@@ -24,10 +24,13 @@ async def favicon():
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
+
+    message_body = await request.body()
+
     logger.info("Received request")
     logger.info(f"Method : {request.method}")
     logger.info(f"header : {request.headers}")
-    logger.info(f"Body : {request.body}")
+    logger.info(f"Body : {message_body.decode("utf-8")}")
 
     try:
         _basicAuth = str(request.headers['authorization']).split(' ')[-1]
@@ -46,7 +49,7 @@ async def read_root(request: Request):
         try:
             body = json.loads(body_raw.decode('utf-8')) 
         except: 
-            body = body_raw
+            body = body_raw.decode('utf-8')
 
         with open('content.json', 'r') as file: 
             content = json.load(file)
@@ -61,10 +64,12 @@ async def read_root(request: Request):
 
     else:
         body_raw = await request.body()
+
         try:
             body = json.loads(body_raw.decode('utf-8')) 
         except: 
-            body = body_raw
+            body = body_raw.decode('utf-8')
+
         _timestamp = datetime.datetime.now().timestamp()
         _card = CallCard(method=request.method, timestamp=_timestamp, body=body, page=_page)
         _page.list_page.controls.insert( 0,
@@ -84,6 +89,7 @@ def delete_request(e, tile, listView, page, timestamp):
     listView.controls.remove(tile)
     page.content.pop(str(timestamp))
     save_json(page.content)
+    logger.info(f'Deleted record {timestamp}')
     page.update()
 
 class CallCard(ft.Container):
@@ -210,9 +216,12 @@ def create_list_view(page, content):
 async def main(page: ft.Page):
     global _page
     _page = page
+    logger.info("OPEN NEW PAGE")
 
     with open('content.json', 'r') as file: 
         _page.content = json.load(file)
+
+    logger.info(f"content.json file: \n{_page.content}")
 
     _page.list_page = create_list_view(page, page.content)
 
