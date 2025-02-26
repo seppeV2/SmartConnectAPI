@@ -6,6 +6,7 @@ import json
 import base64
 import datetime
 import uvicorn
+import logging
 
 _username = "9ASmartConnectUSER"
 _password = "9APass@word01"
@@ -20,9 +21,10 @@ async def favicon():
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
-    print("Received request")
-    print(f"\n\nMethod : {request.method}")
-    print(f"\nBody : {request.body}")
+    logging.info("Received request")
+    logging.info(f"\n\nMethod : {request.method}")
+    logging.info(f"\n\nheader : {request.headers}")
+    logging.info(f"\nBody : {request.body}")
 
     _basicAuth = str(request.headers['authorization']).split(' ')[-1]
     decoded_auth = base64.b64decode(_basicAuth).decode('utf8')
@@ -229,5 +231,5 @@ async def main(page: ft.Page):
 app.mount("/", flet_fastapi.app(main))
 
 if __name__ == "__main__":
-    uvicorn.run('main:app', host='0.0.0.0')
+    uvicorn.run('main:app', host='0.0.0.0', access_log=True)
 

@@ -2,3 +2,4 @@ flet[all]
 fastapi
 uvicorn
 gunicorn
+logging
