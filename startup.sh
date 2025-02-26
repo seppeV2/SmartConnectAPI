@@ -1,0 +1,1 @@
+python -m venv antenv && source antenv/bin/activate && python -m pip install --upgrade pip && pip install setuptools wheel && pip install -r requirements.txt && gunicorn -w 4 -k uvicorn.workers.UvicornWorker --timeout 600 -b 0.0.0.0:8000 main:app
