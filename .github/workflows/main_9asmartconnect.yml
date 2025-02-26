@@ -74,4 +74,4 @@ jobs:
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3E865FED092E48058187B941384BA9F0 }}
 
       - name: 'Restart Web App'
-        run: az webapp restart --name '9ASmartConnect' --slot 'Production'
+        run: az webapp restart --name '9ASmartConnect' --resource-group 'appsvc_linux_centralus' --slot 'Production'
