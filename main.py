@@ -20,6 +20,10 @@ async def favicon():
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
+    print("Received request")
+    print(f"\n\nMethod : {request.method}")
+    print(f"\nBody : {request.body}")
+
     _basicAuth = str(request.headers['authorization']).split(' ')[-1]
     decoded_auth = base64.b64decode(_basicAuth).decode('utf8')
     (decoded_auth_usr, decoded_auth_passwd) = (decoded_auth.split(':')[0], decoded_auth.split(':')[1])
