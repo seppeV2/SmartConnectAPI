@@ -6,6 +6,7 @@ import json
 import base64
 import datetime
 import uvicorn
+import gunicorn
 import logging
 
 _username = "9ASmartConnectUSER"
@@ -13,6 +14,8 @@ _password = "9APass@word01"
 _page = None
 
 app = flet_fastapi.FastAPI()
+logger = logging.getLogger('uvicorn.error')
+
 
 app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
@@ -21,15 +24,18 @@ async def favicon():
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
-    logging.info("Received request")
-    logging.info(f"\n\nMethod : {request.method}")
-    logging.info(f"\n\nheader : {request.headers}")
-    logging.info(f"\nBody : {request.body}")
+    logger.info("Received request")
+    logger.info(f"Method : {request.method}")
+    logger.info(f"header : {request.headers}")
+    logger.info(f"Body : {request.body}")
 
-    _basicAuth = str(request.headers['authorization']).split(' ')[-1]
-    decoded_auth = base64.b64decode(_basicAuth).decode('utf8')
-    (decoded_auth_usr, decoded_auth_passwd) = (decoded_auth.split(':')[0], decoded_auth.split(':')[1])
-
+    try:
+        _basicAuth = str(request.headers['authorization']).split(' ')[-1]
+        decoded_auth = base64.b64decode(_basicAuth).decode('utf8')
+        (decoded_auth_usr, decoded_auth_passwd) = (decoded_auth.split(':')[0], decoded_auth.split(':')[1])
+    except KeyError:
+        raise HTTPException(status_code=401, detail="Unauthorized access")
+    
     if not check_auth(decoded_auth_usr, decoded_auth_passwd):
         raise HTTPException(status_code=401, detail="Unauthorized access")
     
@@ -37,7 +43,10 @@ async def read_root(request: Request):
         _timestamp = datetime.datetime.now().timestamp()
         method = request.method
         body_raw = await request.body()
-        body = json.loads(body_raw.decode('utf-8'))
+        try:
+            body = json.loads(body_raw.decode('utf-8')) 
+        except: 
+            body = body_raw
 
         with open('content.json', 'r') as file: 
             content = json.load(file)
@@ -52,7 +61,10 @@ async def read_root(request: Request):
 
     else:
         body_raw = await request.body()
-        body = json.loads(body_raw.decode('utf-8'))
+        try:
+            body = json.loads(body_raw.decode('utf-8')) 
+        except: 
+            body = body_raw
         _timestamp = datetime.datetime.now().timestamp()
         _card = CallCard(method=request.method, timestamp=_timestamp, body=body, page=_page)
         _page.list_page.controls.insert( 0,
@@ -231,5 +243,5 @@ async def main(page: ft.Page):
 app.mount("/", flet_fastapi.app(main))
 
 if __name__ == "__main__":
-    uvicorn.run('main:app', host='0.0.0.0', access_log=True)
+    uvicorn.run('main:app', host='0.0.0.0')
 
