@@ -14,15 +14,30 @@ app = flet_fastapi.FastAPI()
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
-    if _page is None: raise HTTPException(status_code=500, detail="Server not running ...")
     _basicAuth = str(request.headers['authorization']).split(' ')[-1]
-
     decoded_auth = base64.b64decode(_basicAuth).decode('utf8')
     (decoded_auth_usr, decoded_auth_passwd) = (decoded_auth.split(':')[0], decoded_auth.split(':')[1])
 
     if not check_auth(decoded_auth_usr, decoded_auth_passwd):
         raise HTTPException(status_code=401, detail="Unauthorized access")
     
+    elif _page is None: 
+        _timestamp = datetime.datetime.now().timestamp()
+        method = request.method
+        body_raw = await request.body()
+        body = json.loads(body_raw.decode('utf-8'))
+
+        with open('content.json', 'r') as file: 
+            content = json.load(file)
+        file.close()
+        content[_timestamp] = (method, _timestamp, body)
+        
+        with open('content.json', 'w') as file:
+            json.dump(content, file)
+        file.close()
+
+        return {"Response": "Succesfully added to file"}
+
     else:
         body_raw = await request.body()
         body = json.loads(body_raw.decode('utf-8'))
@@ -34,7 +49,7 @@ async def read_root(request: Request):
         _page.update()
         _page.content[_timestamp] = (request.method, _timestamp,body)
         save_json(_page.content)
-        return {"Response": "Succesfully received"}
+        return {"Response": "Succesfully received + updated app"}
 
 def check_auth(username, password):
     return (_username == username) and (_password == password)
@@ -43,7 +58,7 @@ def check_auth(username, password):
 
 def delete_request(e, tile, listView, page, timestamp):
     listView.controls.remove(tile)
-    page.content.pop(timestamp)
+    page.content.pop(str(timestamp))
     save_json(page.content)
     page.update()
 
@@ -152,15 +167,21 @@ async def main(page: ft.Page):
     with open('content.json', 'r') as file: 
         page.content = json.load(file)
 
-    
+    if len(page.content.keys()) > 0:
+        keys = list(page.content.keys())
+        keys.sort(reverse=True)
+        _page.list_page = ft.ListView(
+            expand=True,
+            controls = [
+                CallCard(method=method, timestamp=timestamp, body=body, page=page) 
+                for (method, timestamp, body) in [page.content[key] for key in keys]
+            ],
+        )
 
-    _page.list_page = ft.ListView(
-        expand=True,
-        controls = [
-            CallCard(method=method, timestamp=timestamp, body=body, page=page) 
-            for (method, timestamp, body) in [page.content[key] for key in page.content.keys()]
-        ],
-    )
+    else:
+        _page.list_page = ft.ListView(
+            expand=True
+        )
 
     _appbar = ft.AppBar(
         leading = ft.Text(),
@@ -189,5 +210,5 @@ async def main(page: ft.Page):
 app.mount("/", flet_fastapi.app(main))
 
 if __name__ == "__main__":
-    uvicorn.run('main:app', host='0.0.0.0', post=5050)
+    uvicorn.run('main:app', host='0.0.0.0')
 
