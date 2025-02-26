@@ -1,5 +1,6 @@
 import flet.fastapi as flet_fastapi
 from fastapi import Request, HTTPException
+from fastapi.responses import FileResponse
 import flet as ft
 import json
 import base64
@@ -11,6 +12,11 @@ _password = "9APass@word01"
 _page = None
 
 app = flet_fastapi.FastAPI()
+
+app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return FileResponse('assets/favicon.ico')
+
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
