@@ -1,3 +1,4 @@
 flet[all]
 fastapi
 uvicorn
+gunicorn
