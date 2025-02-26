@@ -170,28 +170,37 @@ def save_json(data):
     with open('content.json', 'w') as file:
         json.dump(data, file)
 
+
+def create_list_view(page, content):
+
+    if len(content.keys()) > 0:
+        keys = list(content.keys())
+        keys.sort(reverse=True)
+        list_page = ft.ListView(
+            expand=True,
+            controls = [
+                CallCard(method=method, timestamp=timestamp, body=body, page=page) 
+                for (method, timestamp, body) in [content[key] for key in keys]
+            ],
+        )
+
+    else:
+        list_page = ft.ListView(
+            expand=True
+        )
+    
+    return list_page
+    
+    
+
 async def main(page: ft.Page):
     global _page
     _page = page
 
     with open('content.json', 'r') as file: 
-        page.content = json.load(file)
+        _page.content = json.load(file)
 
-    if len(page.content.keys()) > 0:
-        keys = list(page.content.keys())
-        keys.sort(reverse=True)
-        _page.list_page = ft.ListView(
-            expand=True,
-            controls = [
-                CallCard(method=method, timestamp=timestamp, body=body, page=page) 
-                for (method, timestamp, body) in [page.content[key] for key in keys]
-            ],
-        )
-
-    else:
-        _page.list_page = ft.ListView(
-            expand=True
-        )
+    _page.list_page = create_list_view(page, page.content)
 
     _appbar = ft.AppBar(
         leading = ft.Text(),
@@ -207,15 +216,15 @@ async def main(page: ft.Page):
         center_title = True,
     )
 
-    page.views[-1].appbar = _appbar
-    page.views[-1].controls.append(
+    _page.views[-1].appbar = _appbar
+    _page.views[-1].controls.append(
         ft.Divider(thickness=3, color=ft.Colors.WHITE)
     )
-    page.views[-1].controls.append(
+    _page.views[-1].controls.append(
         _page.list_page
     )
 
-    page.update()
+    _page.update()
 
 app.mount("/", flet_fastapi.app(main))
 
