@@ -1,13 +1,17 @@
 import flet.fastapi as flet_fastapi
 from fastapi import Request, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import flet as ft
 import json
 import base64
 import datetime
 import uvicorn
-import gunicorn
 import logging
+from bs4 import BeautifulSoup 
+import fitz
+from PIL import Image as ImagePDF
+import os
 
 _username = "9ASmartConnectUSER"
 _password = "9APass@word01"
