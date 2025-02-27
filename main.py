@@ -12,14 +12,13 @@ from bs4 import BeautifulSoup
 import fitz
 from PIL import Image as ImagePDF
 import os
-
 _username = "9ASmartConnectUSER"
 _password = "9APass@word01"
 _page = None
 
 
 app = flet_fastapi.FastAPI()
-logger = logging.getLogger('uvicorn.error')
+logger = logging.getLogger('gunicorn.error')
 
 app.mount("/assets", StaticFiles(directory='assets'), name='assets')
 
@@ -30,10 +29,11 @@ async def favicon():
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
-    
-    _page.static_url = request.url_for('assets', path = 'invoice')
-    message_body = await request.body()
+    global static_url
+    static_url = request.url_for('assets', path = 'invoice')
 
+    message_body = await request.body()
+    
     logger.info("Received request")
     logger.info(f"Method : {request.method}")
     #logger.info(f"header : {request.headers}")
@@ -75,6 +75,7 @@ async def read_root(request: Request):
         return {"Response": "Succesfully added to file"}
 
     else:
+        
         _card = CallCard(method=request.method, timestamp=_timestamp, body=body,generated_pdf=generated_pdf, pdf_name = pdf_name, page=_page)
         _page.list_page.controls.insert( 0,
             _card,
@@ -194,9 +195,7 @@ class CallCard(ft.Container):
                 0,
                 ft.TextButton(
                     icon=ft.Icons.DOCUMENT_SCANNER,
-                    text=ft.Text(
-                        'Open embedded PDF'
-                    ),
+                    text='Open embedded PDF',
                     on_click=lambda e: self.open_pdf(e, page, self.pdf_name)
                 )
             ) 
@@ -204,7 +203,7 @@ class CallCard(ft.Container):
         return _controls
     
     def open_pdf(self, e, page, filename):
-        global _page
+        global _page, static_url
         file_path = f'assets/invoice/{filename[0:-4]}/{filename}'
         pdf_document = fitz.open(file_path)
 
@@ -215,7 +214,7 @@ class CallCard(ft.Container):
             img = ImagePDF.frombytes("RGB", [pix.width, pix.height], pix.samples)
             path = os.path.join('assets','invoice', f'{filename[0:-4]}')
             img.save(os.path.join(path,f'{filename[0:-4]}_{page_num}.png'))
-            pdf_as_pngs.append(ft.Image(src=f'{_page.static_url}/{filename[0:-4]}/{filename[0:-4]}_{page_num}.png'))
+            pdf_as_pngs.append(ft.Image(src=f'{static_url}/{filename[0:-4]}/{filename[0:-4]}_{page_num}.png'))
 
         image_content = ft.Row(
             controls= [img for img in pdf_as_pngs],
@@ -345,6 +344,12 @@ async def main(page: ft.Page):
     _page.update()
 
 app.mount("/", flet_fastapi.app(main, assets_dir='assets'))
+
+@app.get('/')
+def get_home(request: Request):
+    global static_url
+    static_url = request.url_for('assets', path = 'invoice') 
+    logger.info(f'Static URL = {static_url}')
 
 if __name__ == "__main__":
     uvicorn.run('main:app', host='0.0.0.0')

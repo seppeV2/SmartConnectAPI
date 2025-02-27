@@ -1,6 +1,6 @@
 flet[all]
 fastapi
-uvicorn
+uvicorn==0.34.0
 gunicorn
 bs4
 fitz
