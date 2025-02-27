@@ -8,4 +8,4 @@ frontend
 tools
 pyMuPDF
 pillow
-pathlib
+pathlib==1.0.1
