@@ -1,43 +1,36 @@
 import flet.fastapi as flet_fastapi
 from fastapi import Request, HTTPException
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 import flet as ft
 import json
 import base64
 import datetime
 import uvicorn
+import gunicorn
 import logging
-from bs4 import BeautifulSoup 
-import fitz
-from PIL import Image as ImagePDF
-import os
+
 _username = "9ASmartConnectUSER"
 _password = "9APass@word01"
 _page = None
 
-
 app = flet_fastapi.FastAPI()
-logger = logging.getLogger('gunicorn.error')
+logger = logging.getLogger('uvicorn.error')
 
-app.mount("/assets", StaticFiles(directory='assets'), name='assets')
 
-@app.get('/favicon.ico', include_in_schema=False)
+app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
     return FileResponse('assets/favicon.ico')
 
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
-    global static_url
-    static_url = request.url_for('assets', path = 'invoice')
 
     message_body = await request.body()
-    
+
     logger.info("Received request")
     logger.info(f"Method : {request.method}")
-    #logger.info(f"header : {request.headers}")
-    #logger.info(f"Body : {message_body.decode("utf-8")}")
+    logger.info(f"header : {request.headers}")
+    logger.info(f"Body : {message_body.decode("utf-8")}")
 
     try:
         _basicAuth = str(request.headers['authorization']).split(' ')[-1]
@@ -49,24 +42,19 @@ async def read_root(request: Request):
     if not check_auth(decoded_auth_usr, decoded_auth_passwd):
         raise HTTPException(status_code=401, detail="Unauthorized access")
     
-    
-    _timestamp = datetime.datetime.now().timestamp()
-    method = request.method
-    body_raw = await request.body()
-    
-    try:
-        body = json.loads(body_raw.decode('utf-8')) 
-    except: 
-        body = body_raw.decode('utf-8')
+    elif _page is None: 
+        _timestamp = datetime.datetime.now().timestamp()
+        method = request.method
+        body_raw = await request.body()
+        try:
+            body = json.loads(body_raw.decode('utf-8')) 
+        except: 
+            body = body_raw.decode('utf-8')
 
-    generated_pdf, pdf_name = ubl_transform(body, _timestamp)
-        
-    if _page is None: 
-        
         with open('content.json', 'r') as file: 
             content = json.load(file)
         file.close()
-        content[str(_timestamp)] = (method, _timestamp, body, generated_pdf, pdf_name)
+        content[_timestamp] = (method, _timestamp, body)
         
         with open('content.json', 'w') as file:
             json.dump(content, file)
@@ -75,13 +63,20 @@ async def read_root(request: Request):
         return {"Response": "Succesfully added to file"}
 
     else:
-        
-        _card = CallCard(method=request.method, timestamp=_timestamp, body=body,generated_pdf=generated_pdf, pdf_name = pdf_name, page=_page)
+        body_raw = await request.body()
+
+        try:
+            body = json.loads(body_raw.decode('utf-8')) 
+        except: 
+            body = body_raw.decode('utf-8')
+
+        _timestamp = datetime.datetime.now().timestamp()
+        _card = CallCard(method=request.method, timestamp=_timestamp, body=body, page=_page)
         _page.list_page.controls.insert( 0,
             _card,
         )
         _page.update()
-        _page.content[str(_timestamp)] = (request.method, _timestamp,body, generated_pdf, pdf_name)
+        _page.content[_timestamp] = (request.method, _timestamp,body)
         save_json(_page.content)
         return {"Response": "Succesfully received + updated app"}
 
@@ -89,45 +84,20 @@ def check_auth(username, password):
     return (_username == username) and (_password == password)
 
 
-def ubl_transform(body, time):
-    try:
-        pdf = BeautifulSoup(body, "xml").find("cbc:EmbeddedDocumentBinaryObject").contents[0]
-        file_name = f'{str(time).replace('.','')}.pdf'
-        if pdf != None:
-            path = os.path.join('assets','invoice',f'{file_name[0:-4]}')
-            os.makedirs(path, exist_ok=True)
-            with open(os.path.join(path,file_name), "wb") as f:
-                f.write(base64.b64decode(pdf))
 
-            return True, file_name
-        else:
-            return False, None
-    except:
-        return False, None
-
-    
 def delete_request(e, tile, listView, page, timestamp):
-    global _page
     listView.controls.remove(tile)
-    _page.content.pop(str(timestamp))
-    save_json(_page.content)
-    try:
-        os.remove(os.path.join('assets','invoice',f'{str(timestamp).replace('.','')}'))
-        logger.info('DIRECTORY DELETED')
-    except:
-        logger.error('DIRECTORY NOT DELETED')
+    page.content.pop(str(timestamp))
+    save_json(page.content)
     logger.info(f'Deleted record {timestamp}')
     page.update()
 
 class CallCard(ft.Container):
     
-    def __init__(self, method, timestamp, body, generated_pdf, pdf_name, page):
+    def __init__(self, method, timestamp, body, page):
         self.method = method
         self.timestamp = datetime.datetime.fromtimestamp(timestamp)
         self.timestamp_s = timestamp
-        self.generated_pdf = generated_pdf
-        self.pdf_name = pdf_name
-
         self.body = ft.AlertDialog(
             title=ft.Row(
                 controls = [
@@ -142,12 +112,18 @@ class CallCard(ft.Container):
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             ),        
             content = ft.ListView(
-                    controls = self.get_body_content(page, body), 
-                    width=page.width*0.9
-                ),
+                controls = [
+                    ft.Container(
+                        content = ft.Text(body),
+                        expand=True,
+                        width=page.width*0.9
+                    )
+                ],  
+                width=page.width*0.9
+            ),
             open=False,
+            
         )
-        
 
         super().__init__(
             border=ft.border.all(4, ft.Colors.BLACK),
@@ -180,68 +156,6 @@ class CallCard(ft.Container):
                 ),                
             )
         )     
-
-    def get_body_content(self, page, body):
-        _controls = [
-            ft.Container(
-                content = ft.Text(body),
-                expand=True,
-                width=page.width*0.9
-            )
-        ]
-
-        if self.generated_pdf:
-            _controls.insert(
-                0,
-                ft.TextButton(
-                    icon=ft.Icons.DOCUMENT_SCANNER,
-                    text='Open embedded PDF',
-                    on_click=lambda e: self.open_pdf(e, page, self.pdf_name)
-                )
-            ) 
-
-        return _controls
-    
-    def open_pdf(self, e, page, filename):
-        global _page, static_url
-        file_path = f'assets/invoice/{filename[0:-4]}/{filename}'
-        pdf_document = fitz.open(file_path)
-
-        pdf_as_pngs = []
-        for page_num in range(len(pdf_document)):
-            pdf_page = pdf_document.load_page(page_num)
-            pix = pdf_page.get_pixmap()
-            img = ImagePDF.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            path = os.path.join('assets','invoice', f'{filename[0:-4]}')
-            img.save(os.path.join(path,f'{filename[0:-4]}_{page_num}.png'))
-            pdf_as_pngs.append(ft.Image(src=f'{static_url}/{filename[0:-4]}/{filename[0:-4]}_{page_num}.png'))
-
-        image_content = ft.Row(
-            controls= [img for img in pdf_as_pngs],
-            scroll=ft.ScrollMode.ALWAYS,
-            expand=True
-        )
-        
-        alert_dialog_pdf = ft.AlertDialog(
-            title=ft.Row(
-                controls = [
-                    ft.Text("Embedded PDF"), 
-                    ft.IconButton(
-                        icon=ft.Icons.CLOSE,
-                        on_click = lambda e: self.close_pdf(e, page, alert_dialog_pdf)
-                    ),
-                ],
-                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-            ),
-            content=image_content
-        )
-
-        page.open(alert_dialog_pdf)
-        
-
-    def close_pdf(self, e, page, alert_dialog):
-        page.close(alert_dialog)
-        page.update()
 
     def get_method_color(self, method):
         method_color = {
@@ -295,8 +209,8 @@ def create_list_view(page, content):
         list_page = ft.ListView(
             expand=True,
             controls = [
-                CallCard(method=method, timestamp=timestamp, body=body, generated_pdf = generated_pdf, pdf_name = pdf_name, page=page) 
-                for (method, timestamp, body, generated_pdf, pdf_name) in [content[key] for key in keys]
+                CallCard(method=method, timestamp=timestamp, body=body, page=page) 
+                for (method, timestamp, body) in [content[key] for key in keys]
             ],
         )
 
@@ -316,6 +230,8 @@ async def main(page: ft.Page):
 
     with open('content.json', 'r') as file: 
         _page.content = json.load(file)
+
+    logger.info(f"content.json file: \n{_page.content}")
 
     _page.list_page = create_list_view(page, page.content)
 
@@ -343,13 +259,7 @@ async def main(page: ft.Page):
 
     _page.update()
 
-app.mount("/", flet_fastapi.app(main, assets_dir='assets'))
-
-@app.get('/')
-def get_home(request: Request):
-    global static_url
-    static_url = request.url_for('assets', path = 'invoice') 
-    logger.info(f'Static URL = {static_url}')
+app.mount("/", flet_fastapi.app(main))
 
 if __name__ == "__main__":
     uvicorn.run('main:app', host='0.0.0.0')

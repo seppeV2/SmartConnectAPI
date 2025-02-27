@@ -1,11 +1,4 @@
 flet[all]
 fastapi
-uvicorn==0.34.0
+uvicorn
 gunicorn
-bs4
-fitz
-frontend
-tools
-pyMuPDF
-pillow
-pathlib==1.0.1
