@@ -12,6 +12,8 @@ from bs4 import BeautifulSoup
 import fitz
 from PIL import Image as ImagePDF
 import os
+
+
 _username = "9ASmartConnectUSER"
 _password = "9APass@word01"
 _page = None
@@ -20,7 +22,7 @@ _page = None
 app = flet_fastapi.FastAPI()
 logger = logging.getLogger('gunicorn.error')
 
-app.mount("/assets", StaticFiles(directory='assets'), name='assets')
+#app.mount("/assets", StaticFiles(directory='assets'), name='assets')
 
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
@@ -30,7 +32,7 @@ async def favicon():
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
     global static_url
-    static_url = request.url_for('assets', path = 'invoice')
+    #static_url = request.url_for('assets', path = 'invoice')
 
     message_body = await request.body()
     
