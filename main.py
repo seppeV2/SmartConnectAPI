@@ -6,7 +6,6 @@ import flet as ft
 import json
 import base64
 import datetime
-import uvicorn
 import logging
 from bs4 import BeautifulSoup 
 import fitz
@@ -264,7 +263,4 @@ async def main(page: ft.Page):
     _page.update()
 
 app.mount("/", flet_fastapi.app(main))
-
-if __name__ == "__main__":
-    uvicorn.run('main:app', host='0.0.0.0')
 
