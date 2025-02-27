@@ -2,3 +2,9 @@ flet[all]
 fastapi
 uvicorn
 gunicorn
+bs4
+fitz
+frontend
+tools
+pyMuPDF
+pillow
