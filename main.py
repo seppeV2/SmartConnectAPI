@@ -10,6 +10,7 @@ import uvicorn
 import logging
 from bs4 import BeautifulSoup 
 from PIL import Image as ImagePDF
+import pymupdf
 import os
 
 
