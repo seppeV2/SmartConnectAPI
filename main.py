@@ -9,7 +9,7 @@ import datetime
 import uvicorn
 import logging
 from bs4 import BeautifulSoup 
-import fitz
+import pymupdf
 from PIL import Image as ImagePDF
 import os
 
@@ -22,7 +22,7 @@ _page = None
 app = flet_fastapi.FastAPI()
 logger = logging.getLogger('gunicorn.error')
 
-#app.mount("/assets", StaticFiles(directory='assets'), name='assets')
+app.mount("/assets", StaticFiles(directory='assets'), name='assets')
 
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
@@ -32,7 +32,7 @@ async def favicon():
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
     global static_url
-    #static_url = request.url_for('assets', path = 'invoice')
+    static_url = request.url_for('assets', path = 'invoice')
 
     message_body = await request.body()
     
@@ -207,7 +207,7 @@ class CallCard(ft.Container):
     def open_pdf(self, e, page, filename):
         global _page, static_url
         file_path = f'assets/invoice/{filename[0:-4]}/{filename}'
-        pdf_document = fitz.open(file_path)
+        pdf_document = pymupdf.open(file_path)
 
         pdf_as_pngs = []
         for page_num in range(len(pdf_document)):
