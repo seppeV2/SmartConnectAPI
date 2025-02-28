@@ -31,6 +31,7 @@ jobs:
       
       - name: Install dependencies
         run: |
+          sudo apt install poppler-utils
           python -m pip install --upgrade pip 
           pip install setuptools wheel
           pip install -r requirements.txt

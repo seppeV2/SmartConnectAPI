@@ -1,9 +1,10 @@
-flet[all]
+flet[all]==0.27.3
 fastapi
 uvicorn==0.34.0
 gunicorn
 bs4
 frontend
 tools
-pyMuPDF
+pdf2image
 pillow
+python-poppler

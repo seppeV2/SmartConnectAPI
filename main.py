@@ -9,9 +9,9 @@ import datetime
 import uvicorn
 import logging
 from bs4 import BeautifulSoup 
-import pymupdf
-from PIL import Image as ImagePDF
+from pdf2image import convert_from_path
 import os
+import httpx 
 
 
 _username = "9ASmartConnectUSER"
@@ -19,8 +19,9 @@ _password = "9APass@word01"
 _page = None
 
 
+
 app = flet_fastapi.FastAPI()
-logger = logging.getLogger('gunicorn.error')
+logger = logging.getLogger('uvicorn.error')
 
 app.mount("/assets", StaticFiles(directory='assets'), name='assets')
 
@@ -28,18 +29,19 @@ app.mount("/assets", StaticFiles(directory='assets'), name='assets')
 async def favicon():
     return FileResponse('assets/favicon.ico')
 
+@app.get('/get_static_urls', include_in_schema=False)
+async def get_staic_url(request: Request):
+    global static_url
+    static_url = request.url_for('assets', path = 'invoice')
+    return {'response' : 'OK'}
+
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
 async def read_root(request: Request):
     global static_url
-    static_url = request.url_for('assets', path = 'invoice')
-
-    message_body = await request.body()
     
     logger.info("Received request")
     logger.info(f"Method : {request.method}")
-    #logger.info(f"header : {request.headers}")
-    #logger.info(f"Body : {message_body.decode("utf-8")}")
 
     try:
         _basicAuth = str(request.headers['authorization']).split(' ')[-1]
@@ -114,7 +116,7 @@ def delete_request(e, tile, listView, page, timestamp):
     _page.content.pop(str(timestamp))
     save_json(_page.content)
     try:
-        os.remove(os.path.join('assets','invoice',f'{str(timestamp).replace('.','')}'))
+        os.system(f'rm -r {os.path.join('assets','invoice',str(timestamp).replace('.',''))}')
         logger.info('DIRECTORY DELETED')
     except:
         logger.error('DIRECTORY NOT DELETED')
@@ -207,16 +209,14 @@ class CallCard(ft.Container):
     def open_pdf(self, e, page, filename):
         global _page, static_url
         file_path = f'assets/invoice/{filename[0:-4]}/{filename}'
-        pdf_document = pymupdf.open(file_path)
+        pdf_document = convert_from_path(file_path)
 
         pdf_as_pngs = []
-        for page_num in range(len(pdf_document)):
-            pdf_page = pdf_document.load_page(page_num)
-            pix = pdf_page.get_pixmap()
-            img = ImagePDF.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        for page_num, img in enumerate(pdf_document):
             path = os.path.join('assets','invoice', f'{filename[0:-4]}')
-            img.save(os.path.join(path,f'{filename[0:-4]}_{page_num}.png'))
-            pdf_as_pngs.append(ft.Image(src=f'{static_url}/{filename[0:-4]}/{filename[0:-4]}_{page_num}.png'))
+            img.save(os.path.join(path, f'{filename[0:-4]}_{page_num+1}.png'))
+            pdf_as_pngs.append(ft.Image(src=f'{static_url}/{filename[0:-4]}/{filename[0:-4]}_{page_num+1}.png'))
+            
 
         image_content = ft.Row(
             controls= [img for img in pdf_as_pngs],
@@ -314,6 +314,7 @@ def create_list_view(page, content):
 async def main(page: ft.Page):
     global _page
     _page = page
+
     logger.info("OPEN NEW PAGE")
 
     with open('content.json', 'r') as file: 
@@ -347,11 +348,6 @@ async def main(page: ft.Page):
 
 app.mount("/", flet_fastapi.app(main, assets_dir='assets'))
 
-@app.get('/')
-def get_home(request: Request):
-    global static_url
-    static_url = request.url_for('assets', path = 'invoice') 
-    logger.info(f'Static URL = {static_url}')
 
 if __name__ == "__main__":
     uvicorn.run('main:app', host='0.0.0.0')
