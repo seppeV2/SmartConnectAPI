@@ -1,4 +1,9 @@
 flet[all]
 fastapi
 uvicorn==0.34.0
+gunicorn
 bs4
+frontend
+tools
+pyMuPDF
+pillow
