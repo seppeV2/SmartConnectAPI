@@ -164,7 +164,7 @@ async def main(page: ft.Page):
 
     _page.update()
 
-app.mount("/", flet_fastapi.app(main, assets_dir='assets'))
+app.mount("/", flet_fastapi.app(main, assets_dir=os.path.abspath("assets")))
 
 
 if __name__ == "__main__":
