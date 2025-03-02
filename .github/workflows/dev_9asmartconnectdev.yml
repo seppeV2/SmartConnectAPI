@@ -2,12 +2,12 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - 9ASmartConnect
+name: Build and deploy Python app to Azure Web App - 9ASmartConnectDEV
 
 on:
   push:
     branches:
-      - main
+      - dev
   workflow_dispatch:
 
 jobs:
@@ -31,11 +31,11 @@ jobs:
       
       - name: Install dependencies
         run: |
+          sudo apt install poppler-utils
           python -m pip install --upgrade pip 
           pip install setuptools wheel
           pip install -r requirements.txt
           pip install --upgrade -r requirements.txt
-
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -71,6 +71,6 @@ jobs:
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: '9ASmartConnect'
+          app-name: '9ASmartConnectDEV'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3E865FED092E48058187B941384BA9F0 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_9AF03A67B2594DAA971D82858BCEFA47 }}
