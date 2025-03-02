@@ -5,6 +5,9 @@
 name: Build and deploy Python app to Azure Web App - 9ASmartConnectRELEASE
 
 on:
+  schedule:
+    - cron: '0 2 3 3 *'  # Runs every Monday at 12:00 UTC
+
   push:
     branches:
       - release
