@@ -103,15 +103,20 @@ class CallCard(ft.Container):
         pdf_as_pngs = []
         for page_num, img in enumerate(pdf_document):
             path = os.path.join('assets','invoice', f'{filename[0:-4]}')
-            img.save(os.path.join(path, f'{filename[0:-4]}_{page_num+1}.png'))
+            page_name = f'{filename[0:-4]}_{page_num+1}.png'
+            
+            if not os.path.exists(os.path.join(os.path.dirname(__file__),'assets', 'invoice', filename[0:-4], page_name)):
+                img.save(os.path.join(path, page_name))
+                logger.info(f'PNG Saved: {page_name}')
+                
             pdf_as_pngs.append(
                 ft.Image(
-                    src=f'{self.static_url}/{filename[0:-4]}/{filename[0:-4]}_{page_num+1}.png',
+                    src=os.path.join(self.static_url, filename[0:-4], page_name),
                     fit=ft.ImageFit.FIT_WIDTH
                 )
             )
             
-
+        logger.info(f'Following invoices are displayed: {pdf_as_pngs}')
         image_content = ft.Column(
             controls= [img for img in pdf_as_pngs],
             scroll=ft.ScrollMode.ALWAYS,
