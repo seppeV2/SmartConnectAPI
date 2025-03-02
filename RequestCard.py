@@ -32,10 +32,7 @@ class CallCard(ft.Container):
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             ),        
-            content = ft.ListView(
-                    controls = self.get_body_content(page, body), 
-                    width=page.width*0.9
-                ),
+            content = self.get_body_content(body),
             open=False,
         )
         
@@ -51,7 +48,7 @@ class CallCard(ft.Container):
                             icon=ft.Icons.DELETE,
                             icon_size=40,
                             icon_color=ft.Colors.RED,
-                            on_click= lambda e: self.delete_request(e, self, self.parent, page, self.timestamp_s)
+                            on_click= lambda e: self.delete_request(e, self, self.parent, self.timestamp_s)
                         ),
                 leading= self.create_leading_logo(),
                 title=ft.Row(
@@ -64,7 +61,7 @@ class CallCard(ft.Container):
                             icon=ft.Icons.OPEN_IN_NEW,
                             icon_size=40,
                             icon_color=ft.Colors.BLUE,
-                            on_click=lambda e: self.open_body(e, page)
+                            on_click=lambda e: self.open_body(e)
                         )
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -72,28 +69,34 @@ class CallCard(ft.Container):
             )
         )     
 
-    def get_body_content(self, page, body):
-        _controls = [
-            ft.Container(
-                content = ft.Text(body),
+    def get_body_content(self, body):
+        body_content = [
+            ft.ListView(
+                controls = [
+                    ft.Container(
+                        content = ft.Text(body),
+                        expand=True,
+                        width=self.page.width*0.9
+                    )
+                ], 
+                width=self.page.width*0.9,
                 expand=True,
-                width=page.width*0.9
-            )
+            ),
         ]
 
         if self.generated_pdf:
-            _controls.insert(
+            body_content.insert(
                 0,
                 ft.TextButton(
                     icon=ft.Icons.DOCUMENT_SCANNER,
                     text='Open embedded PDF',
-                    on_click=lambda e: self.open_pdf(e, page, self.pdf_name)
+                    on_click=lambda e: self.open_pdf(e, self.pdf_name)
                 )
             ) 
 
-        return _controls
+        return ft.Column(controls=body_content)
     
-    def open_pdf(self, e, page, filename):
+    def open_pdf(self, e, filename):
         file_path = f'assets/invoice/{filename[0:-4]}/{filename}'
         pdf_document = convert_from_path(file_path)
 
@@ -101,10 +104,15 @@ class CallCard(ft.Container):
         for page_num, img in enumerate(pdf_document):
             path = os.path.join('assets','invoice', f'{filename[0:-4]}')
             img.save(os.path.join(path, f'{filename[0:-4]}_{page_num+1}.png'))
-            pdf_as_pngs.append(ft.Image(src=f'{self.static_url}/{filename[0:-4]}/{filename[0:-4]}_{page_num+1}.png'))
+            pdf_as_pngs.append(
+                ft.Image(
+                    src=f'{self.static_url}/{filename[0:-4]}/{filename[0:-4]}_{page_num+1}.png',
+                    fit=ft.ImageFit.FIT_WIDTH
+                )
+            )
             
 
-        image_content = ft.Row(
+        image_content = ft.Column(
             controls= [img for img in pdf_as_pngs],
             scroll=ft.ScrollMode.ALWAYS,
             expand=True
@@ -116,7 +124,7 @@ class CallCard(ft.Container):
                     ft.Text("Embedded PDF"), 
                     ft.IconButton(
                         icon=ft.Icons.CLOSE,
-                        on_click = lambda e: self.close_pdf(e, page, alert_dialog_pdf)
+                        on_click = lambda e: self.close_pdf(e, alert_dialog_pdf)
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -124,12 +132,12 @@ class CallCard(ft.Container):
             content=image_content
         )
 
-        page.open(alert_dialog_pdf)
+        self.page.open(alert_dialog_pdf)
         
 
-    def close_pdf(self, e, page, alert_dialog):
-        page.close(alert_dialog)
-        page.update()
+    def close_pdf(self, e, alert_dialog):
+        self.page.close(alert_dialog)
+        self.page.update()
 
     def get_method_color(self, method):
         method_color = {
@@ -140,12 +148,12 @@ class CallCard(ft.Container):
         }
         return method_color[method]
 
-    def open_body(self, e, page):
-        page.open(self.body)
-        page.update()
+    def open_body(self, e):
+        self.page.open(self.body)
+        self.page.update()
 
 
-    def close_body(self, e, page):
+    def close_body(self, e):
         self.page.close(self.body)
         self.page.update()
 
@@ -170,7 +178,7 @@ class CallCard(ft.Container):
 
         )
     
-    def delete_request(self, e, tile, listView, page, timestamp):
+    def delete_request(self, e, tile, listView, timestamp):
         listView.controls.remove(tile)
         self.page.content.pop(str(timestamp))
         save_json(self.page.content)
@@ -180,7 +188,7 @@ class CallCard(ft.Container):
         except:
             logger.error('DIRECTORY NOT DELETED')
         logger.info(f'Deleted record {timestamp}')
-        page.update()
+        self.page.update()
  
 def save_json(data):
     with open('content.json', 'w') as file:

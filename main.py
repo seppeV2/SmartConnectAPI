@@ -50,14 +50,10 @@ async def read_root(request: Request):
     
     _timestamp = datetime.datetime.now().timestamp()
     method = request.method
-    body_raw = await request.body()
-    
-    try:
-        body = json.loads(body_raw.decode('utf-8')) 
-    except: 
-        body = body_raw.decode('utf-8')
+    body_raw = await request.body() 
+    body = body_raw.decode('utf-8')
 
-    generated_pdf, pdf_name = ubl_transform(body, _timestamp)
+    generated_pdf, pdf_name, body = ubl_transform(body, _timestamp)
         
     if _page is None: 
         
@@ -88,23 +84,33 @@ def check_auth(username, password):
 
 
 def ubl_transform(body, time):
+    pdf_found = False
+    file_name = None
+
     try:
-        pdf = BeautifulSoup(body, "xml").find("cbc:EmbeddedDocumentBinaryObject").contents[0]
-        file_name = f'{str(time).replace('.','')}.pdf'
+        soup = BeautifulSoup(body, "xml")
+        pdf_soup = soup.find("cbc:EmbeddedDocumentBinaryObject")
+        pdf = pdf_soup.contents[0]
+        pdf.replace_with(f'{pdf[0:5]}...{pdf[-6:-1]}')  
+        body = soup
+
+        _file_name = f'{str(time).replace('.','')}.pdf'
+
         if pdf != None:
-            path = os.path.join('assets','invoice',f'{file_name[0:-4]}')
+            path = os.path.join('assets','invoice',f'{_file_name[0:-4]}')
             os.makedirs(path, exist_ok=True)
-            with open(os.path.join(path,file_name), "wb") as f:
+            with open(os.path.join(path,_file_name), "wb") as f:
                 f.write(base64.b64decode(pdf))
+            file_name = _file_name
+            pdf_found = True
+            
+        
+    except Exception as error: 
+        logger.info(f'Failed to transfor UBL:')
+        logger.info(error)
+        
 
-            return True, file_name
-        else:
-            return False, None
-    except:
-        return False, None
-
-   
-
+    return pdf_found, file_name, str(body)
 
 
 def create_list_view(page, content):
