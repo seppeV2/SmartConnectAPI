@@ -74,12 +74,11 @@ class CallCard(ft.Container):
             ft.ListView(
                 controls = [
                     ft.Container(
-                        content = ft.Text(body),
+                        content = ft.Text(body, size=20),
                         expand=True,
-                        width=self.page.width*0.9
                     )
                 ], 
-                width=self.page.width*0.9,
+                width=self.page.width*0.65,
                 expand=True,
             ),
         ]
@@ -90,7 +89,8 @@ class CallCard(ft.Container):
                 ft.TextButton(
                     icon=ft.Icons.DOCUMENT_SCANNER,
                     text='Open embedded PDF',
-                    on_click=lambda e: self.open_pdf(e, self.pdf_name)
+                    on_click=lambda e: self.open_pdf(e, self.pdf_name),
+                    style=ft.ButtonStyle(icon_size=20, text_style=ft.TextStyle(size=20))
                 )
             ) 
 
@@ -112,7 +112,8 @@ class CallCard(ft.Container):
             pdf_as_pngs.append(
                 ft.Image(
                     src=os.path.join('staticFiles', 'invoice', filename[0:-4], page_name),
-                    fit=ft.ImageFit.FIT_WIDTH
+                    fit=ft.ImageFit.FIT_WIDTH,
+                    width=0.65*self.page.width
                 )
             )
             

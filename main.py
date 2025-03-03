@@ -92,7 +92,7 @@ def ubl_transform(body, time):
         pdf_soup = soup.find("cbc:EmbeddedDocumentBinaryObject")
         pdf = pdf_soup.contents[0]
         pdf.replace_with(f'{pdf[0:5]}...{pdf[-6:-1]}')  
-        body = soup
+        body = create_large_prettify(soup)
 
         _file_name = f"{str(time).replace('.','')}.pdf"
 
@@ -111,6 +111,18 @@ def ubl_transform(body, time):
         
 
     return pdf_found, file_name, str(body)
+
+
+def create_large_prettify(soup: BeautifulSoup):
+    factor = 6
+    lines = soup.prettify().split('\n')
+    result = ''
+    for line in lines: 
+        spaces = (len(line) - len(line.lstrip(' ')))
+        line = factor * spaces * ' ' + line
+        result += line+ '\n'
+
+    return result
 
 
 def create_list_view(page, content):
