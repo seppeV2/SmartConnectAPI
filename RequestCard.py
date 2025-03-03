@@ -111,7 +111,7 @@ class CallCard(ft.Container):
                 
             pdf_as_pngs.append(
                 ft.Image(
-                    src=os.path.join(self.static_url, filename[0:-4], page_name),
+                    src=os.path.join('invoice', filename[0:-4], page_name),
                     fit=ft.ImageFit.FIT_WIDTH
                 )
             )
