@@ -188,7 +188,7 @@ class CallCard(ft.Container):
         self.page.content.pop(str(timestamp))
         save_json(self.page.content)
         try:
-            os.system(f'rm -r {os.path.join('assets','invoice',str(timestamp).replace('.',''))}')
+            os.system(f"rm -r {os.path.join('assets','invoice',str(timestamp).replace('.',''))}")
             logger.info('DIRECTORY DELETED')
         except:
             logger.error('DIRECTORY NOT DELETED')

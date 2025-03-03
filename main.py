@@ -94,7 +94,7 @@ def ubl_transform(body, time):
         pdf.replace_with(f'{pdf[0:5]}...{pdf[-6:-1]}')  
         body = soup
 
-        _file_name = f'{str(time).replace('.','')}.pdf'
+        _file_name = f"{str(time).replace('.','')}.pdf"
 
         if pdf != None:
             path = os.path.join('assets','invoice',f'{_file_name[0:-4]}')
