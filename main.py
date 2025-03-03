@@ -151,6 +151,9 @@ async def main(page: ft.Page):
     global _page
     _page = page
 
+    page.title = "Smart Connect API"
+    
+
     logger.info("OPEN NEW PAGE")
 
     with open('content.json', 'r') as file: 
