@@ -102,7 +102,7 @@ class CallCard(ft.Container):
 
         pdf_as_pngs = []
         for page_num, img in enumerate(pdf_document):
-            path = os.path.join('assets','invoice', f'{filename[0:-4]}')
+            path = os.path.join('staticFiles','invoice', f'{filename[0:-4]}')
             page_name = f'{filename[0:-4]}_{page_num+1}.png'
             
             if not os.path.exists(os.path.join(os.path.dirname(__file__),'staticFiles', 'invoice', filename[0:-4], page_name)):
