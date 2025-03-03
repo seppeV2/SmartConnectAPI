@@ -22,7 +22,7 @@ _page = None
 app = flet_fastapi.FastAPI()
 logger = logging.getLogger('uvicorn.error')
 
-app.mount("/assets", StaticFiles(directory='assets'), name='assets')
+app.mount("/staticFiles", StaticFiles(directory='staticFiles'), name='staticFiles')
 
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
@@ -34,7 +34,7 @@ async def read_root(request: Request):
     
     logger.info("Received request")
     logger.info(f"Method : {request.method}")
-    static_url = str(request.url_for('assets', path = 'invoice'))
+    static_url = str(request.url_for('staticFiles', path = 'invoice'))
 
 
     try:
@@ -97,7 +97,7 @@ def ubl_transform(body, time):
         _file_name = f"{str(time).replace('.','')}.pdf"
 
         if pdf != None:
-            path = os.path.join('assets','invoice',f'{_file_name[0:-4]}')
+            path = os.path.join('staticFiles','invoice',f'{_file_name[0:-4]}')
             os.makedirs(path, exist_ok=True)
             with open(os.path.join(path,_file_name), "wb") as f:
                 f.write(base64.b64decode(pdf))

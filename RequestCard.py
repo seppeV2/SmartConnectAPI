@@ -97,7 +97,7 @@ class CallCard(ft.Container):
         return ft.Column(controls=body_content)
     
     def open_pdf(self, e, filename):
-        file_path = f'assets/invoice/{filename[0:-4]}/{filename}'
+        file_path = f'staticFiles/invoice/{filename[0:-4]}/{filename}'
         pdf_document = convert_from_path(file_path)
 
         pdf_as_pngs = []
@@ -105,13 +105,13 @@ class CallCard(ft.Container):
             path = os.path.join('assets','invoice', f'{filename[0:-4]}')
             page_name = f'{filename[0:-4]}_{page_num+1}.png'
             
-            if not os.path.exists(os.path.join(os.path.dirname(__file__),'assets', 'invoice', filename[0:-4], page_name)):
+            if not os.path.exists(os.path.join(os.path.dirname(__file__),'staticFiles', 'invoice', filename[0:-4], page_name)):
                 img.save(os.path.join(path, page_name))
                 logger.info(f'PNG Saved: {page_name}')
                 
             pdf_as_pngs.append(
                 ft.Image(
-                    src=os.path.join('invoice', filename[0:-4], page_name),
+                    src=os.path.join(os.path.dirname(__file__),'staticFiles', 'invoice', filename[0:-4], page_name),
                     fit=ft.ImageFit.FIT_WIDTH
                 )
             )
