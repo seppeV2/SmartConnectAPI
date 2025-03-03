@@ -101,7 +101,7 @@ class CallCard(ft.Container):
         for page_num, img in enumerate(pdf_document):
             path = os.path.join('assets','invoice', f'{filename[0:-4]}')
             img.save(os.path.join(path, f'{filename[0:-4]}_{page_num+1}.png'))
-            pdf_as_pngs.append(ft.Image(src=f'{self.static_url}/{filename[0:-4]}/{filename[0:-4]}_{page_num+1}.png'))
+            pdf_as_pngs.append(ft.Image(src=f'invoice/{filename[0:-4]}/{filename[0:-4]}_{page_num+1}.png'))
             
 
         image_content = ft.Row(
