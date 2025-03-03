@@ -97,21 +97,21 @@ class CallCard(ft.Container):
         return ft.Column(controls=body_content)
     
     def open_pdf(self, e, filename):
-        file_path = f'staticFiles/invoice/{filename[0:-4]}/{filename}'
+        file_path = f'assets/staticFiles/invoice/{filename[0:-4]}/{filename}'
         pdf_document = convert_from_path(file_path)
 
         pdf_as_pngs = []
         for page_num, img in enumerate(pdf_document):
-            path = os.path.join('staticFiles','invoice', f'{filename[0:-4]}')
+            path = os.path.join('assets','staticFiles','invoice', f'{filename[0:-4]}')
             page_name = f'{filename[0:-4]}_{page_num+1}.png'
             
-            if not os.path.exists(os.path.join(os.path.dirname(__file__),'staticFiles', 'invoice', filename[0:-4], page_name)):
+            if not os.path.exists(os.path.join(os.path.dirname(__file__),'assets','staticFiles', 'invoice', filename[0:-4], page_name)):
                 img.save(os.path.join(path, page_name))
                 logger.info(f'PNG Saved: {page_name}')
                 
             pdf_as_pngs.append(
                 ft.Image(
-                    src=os.path.join(os.path.dirname(__file__),'staticFiles', 'invoice', filename[0:-4], page_name),
+                    src=os.path.join('staticFiles', 'invoice', filename[0:-4], page_name),
                     fit=ft.ImageFit.FIT_WIDTH
                 )
             )
@@ -188,7 +188,7 @@ class CallCard(ft.Container):
         self.page.content.pop(str(timestamp))
         save_json(self.page.content)
         try:
-            os.system(f"rm -r {os.path.join('staticFiles','invoice',str(timestamp).replace('.',''))}")
+            os.system(f"rm -r {os.path.join('assets', 'staticFiles','invoice',str(timestamp).replace('.',''))}")
             logger.info('DIRECTORY DELETED')
         except:
             logger.error('DIRECTORY NOT DELETED')
