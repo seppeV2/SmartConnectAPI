@@ -16,7 +16,7 @@ from azure.storage.blob import BlobClient
 
 _username = "9ASmartConnectUSER"
 _password = "9APass@word01"
-_SAS_blob_url = "https://st9asmartconnectapi.blob.core.windows.net/ct9asmartconnectapi/9Asmartconnect_api_content.json?sp=r&st=2025-03-06T16:28:43Z&se=2026-03-07T00:28:43Z&spr=https&sv=2022-11-02&sr=b&sig=Qgsgq%2BnvaRBVf2Qe0pVr%2B8N%2BhAYgIMm%2BnfsJ6sIMZ%2Bo%3D"
+_SAS_blob_url = "https://st9asmartconnectapi.blob.core.windows.net/ct9asmartconnectapi/9Asmartconnect_api_content.json?sp=rw&st=2025-03-06T16:38:40Z&se=2025-03-07T00:38:40Z&spr=https&sv=2022-11-02&sr=b&sig=H1gv4xoOLp281ESYrkntX7q8EGLk7nze7rr15n4tJnw%3D"
 _blob_client = BlobClient.from_blob_url(_SAS_blob_url)
 
 _page = None
