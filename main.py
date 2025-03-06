@@ -11,11 +11,16 @@ import logging
 from bs4 import BeautifulSoup 
 import os
 from RequestCard import CallCard, save_json
+from azure.storage.blob import BlobClient
 
 
 _username = "9ASmartConnectUSER"
 _password = "9APass@word01"
+_SAS_blob_url = "https://st9asmartconnectapi.blob.core.windows.net/ct9asmartconnectapi/9Asmartconnect_api_content_dev.json?sp=rw&st=2025-03-06T13:18:45Z&se=2026-03-06T21:18:45Z&spr=https&sv=2022-11-02&sr=b&sig=JcdYHuMcBW3WOzBSfo1FdJ606VytLFTJO9xtFBarSLQ%3D"
+_blob_client = BlobClient.from_blob_url(_SAS_blob_url)
+
 _page = None
+
 
 
 
@@ -57,14 +62,11 @@ async def import_endpoint(import_id: str, request: Request):
         
     if _page is None: 
         
-        with open('content.json', 'r') as file: 
-            content = json.load(file)
-        file.close()
+        _blob_data = _blob_client.download_blob()
+        content = json.loads(_blob_data.read().decode('utf-8'))
         content[str(_timestamp)] = (method, _timestamp, body, generated_pdf, pdf_name, static_url, import_id)
         
-        with open('content.json', 'w') as file:
-            json.dump(content, file)
-        file.close()
+        _blob_client.upload_blob(json.dumps(content).encode('utf-8'), overwrite=True)
 
         return {"Response": "Succesfully added to file"}
 
@@ -76,7 +78,7 @@ async def import_endpoint(import_id: str, request: Request):
         )
         _page.update()
         _page.content[str(_timestamp)] = (request.method, _timestamp,body, generated_pdf, pdf_name, static_url, import_id)
-        save_json(_page.content)
+        save_json(_page.content, _blob_client)
         return {"Response": "Succesfully received + updated app"}
 
 @app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
@@ -108,14 +110,11 @@ async def read_root(request: Request):
         
     if _page is None: 
         
-        with open('content.json', 'r') as file: 
-            content = json.load(file)
-        file.close()
+        _blob_data = _blob_client.download_blob()
+        content = json.loads(_blob_data.read().decode('utf-8'))
         content[str(_timestamp)] = (method, _timestamp, body, generated_pdf, pdf_name, static_url, None)
         
-        with open('content.json', 'w') as file:
-            json.dump(content, file)
-        file.close()
+        _blob_client.upload_blob(json.dumps(content).encode('utf-8'), overwrite=True)
 
         return {"Response": "Succesfully added to file"}
 
@@ -127,7 +126,7 @@ async def read_root(request: Request):
         )
         _page.update()
         _page.content[str(_timestamp)] = (request.method, _timestamp,body, generated_pdf, pdf_name, static_url, None)
-        save_json(_page.content)
+        save_json(_page.content, _blob_client)
         return {"Response": "Succesfully received + updated app"}
 
 def check_auth(username, password):
@@ -203,12 +202,12 @@ async def main(page: ft.Page):
     _page = page
 
     page.title = "Smart Connect API"
-
+    page.blob_client = _blob_client
 
     logger.info("OPEN NEW PAGE")
 
-    with open('content.json', 'r') as file: 
-        _page.content = json.load(file)
+    _blob_data = _blob_client.download_blob()
+    page.content = json.loads(_blob_data.read().decode('utf-8'))
 
     _page.list_page = create_list_view(page, page.content)
 

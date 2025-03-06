@@ -7,3 +7,5 @@ frontend
 tools
 pdf2image
 pillow
+azure-storage-blob
+azure-identity
