@@ -29,12 +29,12 @@ async def favicon():
     return FileResponse('assets/favicon.ico')
 
 
-@app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
-async def read_root(request: Request):
-    
+@app.api_route('/import/{import_id}', methods=["GET", "POST", "PUT", "DELETE"])
+async def import_endpoint(import_id: str, request: Request):
     logger.info("Received request")
     logger.info(f"Method : {request.method}")
     static_url = str(request.url_for('staticFiles', path = 'invoice'))
+
 
 
     try:
@@ -60,7 +60,58 @@ async def read_root(request: Request):
         with open('content.json', 'r') as file: 
             content = json.load(file)
         file.close()
-        content[str(_timestamp)] = (method, _timestamp, body, generated_pdf, pdf_name, static_url)
+        content[str(_timestamp)] = (method, _timestamp, body, generated_pdf, pdf_name, static_url, import_id)
+        
+        with open('content.json', 'w') as file:
+            json.dump(content, file)
+        file.close()
+
+        return {"Response": "Succesfully added to file"}
+
+    else:
+        
+        _card = CallCard(method=request.method, timestamp=_timestamp, body=body,generated_pdf=generated_pdf, pdf_name = pdf_name,static_url=static_url, page=_page, import_id=import_id)
+        _page.list_page.controls.insert( 0,
+            _card,
+        )
+        _page.update()
+        _page.content[str(_timestamp)] = (request.method, _timestamp,body, generated_pdf, pdf_name, static_url, import_id)
+        save_json(_page.content)
+        return {"Response": "Succesfully received + updated app"}
+
+@app.api_route("/import", methods=["GET", "POST", "PUT", "DELETE"])
+async def read_root(request: Request):
+    
+    logger.info("Received request")
+    logger.info(f"Method : {request.method}")
+    static_url = str(request.url_for('staticFiles', path = 'invoice'))
+
+
+
+    try:
+        _basicAuth = str(request.headers['authorization']).split(' ')[-1]
+        decoded_auth = base64.b64decode(_basicAuth).decode('utf8')
+        (decoded_auth_usr, decoded_auth_passwd) = (decoded_auth.split(':')[0], decoded_auth.split(':')[1])
+    except KeyError:
+        raise HTTPException(status_code=401, detail="Unauthorized access")
+    
+    if not check_auth(decoded_auth_usr, decoded_auth_passwd):
+        raise HTTPException(status_code=401, detail="Unauthorized access")
+    
+    
+    _timestamp = datetime.datetime.now().timestamp()
+    method = request.method
+    body_raw = await request.body() 
+    body = body_raw.decode('utf-8')
+
+    generated_pdf, pdf_name, body = ubl_transform(body, _timestamp)
+        
+    if _page is None: 
+        
+        with open('content.json', 'r') as file: 
+            content = json.load(file)
+        file.close()
+        content[str(_timestamp)] = (method, _timestamp, body, generated_pdf, pdf_name, static_url, None)
         
         with open('content.json', 'w') as file:
             json.dump(content, file)
@@ -75,7 +126,7 @@ async def read_root(request: Request):
             _card,
         )
         _page.update()
-        _page.content[str(_timestamp)] = (request.method, _timestamp,body, generated_pdf, pdf_name, static_url)
+        _page.content[str(_timestamp)] = (request.method, _timestamp,body, generated_pdf, pdf_name, static_url, None)
         save_json(_page.content)
         return {"Response": "Succesfully received + updated app"}
 
@@ -133,8 +184,8 @@ def create_list_view(page, content):
         list_page = ft.ListView(
             expand=True,
             controls = [
-                CallCard(method=method, timestamp=timestamp, body=body, generated_pdf = generated_pdf, pdf_name = pdf_name, static_url=static_url, page=page) 
-                for (method, timestamp, body, generated_pdf, pdf_name, static_url) in [content[key] for key in keys]
+                CallCard(method=method, timestamp=timestamp, body=body, generated_pdf = generated_pdf, pdf_name = pdf_name, static_url=static_url, page=page, import_id=import_id) 
+                for (method, timestamp, body, generated_pdf, pdf_name, static_url, import_id) in [content[key] for key in keys]
             ],
         )
 
@@ -152,7 +203,7 @@ async def main(page: ft.Page):
     _page = page
 
     page.title = "Smart Connect API"
-    
+
 
     logger.info("OPEN NEW PAGE")
 

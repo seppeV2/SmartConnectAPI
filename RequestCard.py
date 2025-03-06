@@ -10,7 +10,7 @@ logger = logging.getLogger('uvicorn.error')
 
 class CallCard(ft.Container):
     
-    def __init__(self, method, timestamp, body, generated_pdf, pdf_name,static_url, page):
+    def __init__(self, method, timestamp, body, generated_pdf, pdf_name,static_url, page, import_id = None):
         self.method = method
         self.timestamp = datetime.datetime.fromtimestamp(timestamp)
         self.timestamp_s = timestamp
@@ -57,6 +57,7 @@ class CallCard(ft.Container):
                             value= self.timestamp.strftime("%A %d-%m-%Y %H:%M:%S"),
                             size=24
                         ),
+                        ft.Text() if import_id == None else ft.Text(value=f'ID : {import_id}', size=24),
                         ft.IconButton(
                             icon=ft.Icons.OPEN_IN_NEW,
                             icon_size=40,
