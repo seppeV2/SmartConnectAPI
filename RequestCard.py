@@ -186,6 +186,7 @@ class CallCard(ft.Container):
         )
     
     def delete_request(self, e, tile, listView, timestamp):
+
         listView.controls.remove(tile)
 
         _blob_data = self.page.blob_client.download_blob()
@@ -193,16 +194,17 @@ class CallCard(ft.Container):
 
         try:
             self.page.content.pop(str(timestamp))
+            save_json(self.page.content, self.page.blob_client)
         except KeyError:
             logger.info(f'Record with timestamp {timestamp} already deleted')
-            return
 
-        save_json(self.page.content, self.page.blob_client)
+        
         try:
             os.system(f"rm -r {os.path.join('assets', 'staticFiles','invoice',str(timestamp).replace('.',''))}")
             logger.info('DIRECTORY DELETED')
         except:
             logger.error('DIRECTORY NOT DELETED')
+
         logger.info(f'Deleted record {timestamp}')
         self.page.update()
  
