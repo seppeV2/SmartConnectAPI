@@ -14,28 +14,22 @@ from RequestCard import CallCard, save_json
 from azure.storage.blob import BlobClient
 
 
-_username = "9ASmartConnectUSER"
-_password = "9APass@word01"
+
 _page = None
 
 app = flet_fastapi.FastAPI()
 logger = logging.getLogger('uvicorn.error')
-SAS_found = False
+
 try:
     _SAS_blob_url = os.environ.get('SAS_CONNECTION_STRING_SMARTCONNECT')
-    test_value = os.environ.get('SAS_TEST_VALUE')
-    if _SAS_blob_url != None:
-        logger.info("SAS Connection string found")
-        logger.info(f"Test value = {test_value}")
-        SAS_found = True
+    _username = os.environ.get('API_USER_NAME')
+    _password = os.environ.get('API_USER_SECRET')
+    if _SAS_blob_url != None and _username != None and _password != None:
+        logger.info("Environmental variables found")
     else:
-        logger.info("SAS Connection string not found")
-        _SAS_blob_url = "https://st9asmartconnectapi.blob.core.windows.net/ct9asmartconnectapi/9Asmartconnect_api_content.json?sp=rw&st=2025-03-07T10:56:24Z&se=2026-03-07T18:56:24Z&spr=https&sv=2022-11-02&sr=b&sig=5eJBdLVHIpPnupYVcSQkzJQgQ%2BOT0kDE5GlDRYQEZVo%3D"
-
-
+        logger.info("Not all Environmental variables found")
 except:
-    logger.info("error in reading Connection string")
-    _SAS_blob_url = "https://st9asmartconnectapi.blob.core.windows.net/ct9asmartconnectapi/9Asmartconnect_api_content.json?sp=rw&st=2025-03-07T10:56:24Z&se=2026-03-07T18:56:24Z&spr=https&sv=2022-11-02&sr=b&sig=5eJBdLVHIpPnupYVcSQkzJQgQ%2BOT0kDE5GlDRYQEZVo%3D"
+    logger.info("Error in finding the Environmnetal variables")
 
 _blob_client = BlobClient.from_blob_url(_SAS_blob_url)
 
@@ -51,8 +45,6 @@ async def import_endpoint(import_id: str, request: Request):
     logger.info("Received request")
     logger.info(f"Method : {request.method}")
     static_url = str(request.url_for('staticFiles', path = 'invoice'))
-
-    logger.info(f"SAS Found = {SAS_found}")
 
     try:
         _basicAuth = str(request.headers['authorization']).split(' ')[-1]
