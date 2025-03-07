@@ -92,8 +92,6 @@ async def read_root(request: Request):
     logger.info(f"Method : {request.method}")
     static_url = str(request.url_for('staticFiles', path = 'invoice'))
 
-
-
     try:
         _basicAuth = str(request.headers['authorization']).split(' ')[-1]
         decoded_auth = base64.b64decode(_basicAuth).decode('utf8')
@@ -191,7 +189,6 @@ def create_list_view(page, content):
                 for (method, timestamp, body, generated_pdf, pdf_name, static_url, import_id) in [content[key] for key in keys]
             ],
         )
-
     else:
         list_page = ft.ListView(
             expand=True
