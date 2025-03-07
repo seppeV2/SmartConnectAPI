@@ -16,16 +16,27 @@ from azure.storage.blob import BlobClient
 
 _username = "9ASmartConnectUSER"
 _password = "9APass@word01"
-_SAS_blob_url = "https://st9asmartconnectapi.blob.core.windows.net/ct9asmartconnectapi/9Asmartconnect_api_content.json?sp=rw&st=2025-03-06T16:38:40Z&se=2025-03-07T00:38:40Z&spr=https&sv=2022-11-02&sr=b&sig=H1gv4xoOLp281ESYrkntX7q8EGLk7nze7rr15n4tJnw%3D"
-_blob_client = BlobClient.from_blob_url(_SAS_blob_url)
-
 _page = None
-
-
-
 
 app = flet_fastapi.FastAPI()
 logger = logging.getLogger('uvicorn.error')
+
+try:
+    _SAS_blob_url = os.environ.get('SAS_CONNECTION_STRING_SMARTCONNECT')
+    test_value = os.environ.get('SAS_TEST_VALUE')
+    if _SAS_blob_url != None:
+        logger.info("SAS Connection string found")
+        logger.info(f"Test value = {test_value}")
+    else:
+        logger.info("SAS Connection string not found")
+        _SAS_blob_url = "https://st9asmartconnectapi.blob.core.windows.net/ct9asmartconnectapi/9Asmartconnect_api_content.json?sp=rw&st=2025-03-07T10:56:24Z&se=2026-03-07T18:56:24Z&spr=https&sv=2022-11-02&sr=b&sig=5eJBdLVHIpPnupYVcSQkzJQgQ%2BOT0kDE5GlDRYQEZVo%3D"
+
+
+except:
+    logger.info("error in reading Connection string")
+    _SAS_blob_url = "https://st9asmartconnectapi.blob.core.windows.net/ct9asmartconnectapi/9Asmartconnect_api_content.json?sp=rw&st=2025-03-07T10:56:24Z&se=2026-03-07T18:56:24Z&spr=https&sv=2022-11-02&sr=b&sig=5eJBdLVHIpPnupYVcSQkzJQgQ%2BOT0kDE5GlDRYQEZVo%3D"
+
+_blob_client = BlobClient.from_blob_url(_SAS_blob_url)
 
 app.mount("/staticFiles", StaticFiles(directory='assets/staticFiles'), name='staticFiles')
 
