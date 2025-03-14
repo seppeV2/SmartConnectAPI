@@ -4,6 +4,7 @@ from pdf2image import convert_from_path
 import os
 import json
 import logging
+import pyperclip
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -70,6 +71,10 @@ class CallCard(ft.Container):
             )
         )     
 
+    def copy_to_clipboard(self, e, body):
+        pyperclip.copy(body)
+        logger.info("Copied to clipboard")
+
     def get_body_content(self, body):
         body_content = [
             ft.ListView(
@@ -84,8 +89,17 @@ class CallCard(ft.Container):
             ),
         ]
 
+        body_content_control = [
+            ft.TextButton(
+                icon=ft.Icons.COPY,
+                text = 'Copy content to clipboard',
+                on_click = lambda e: self.copy_to_clipboard(e, body),
+                style=ft.ButtonStyle(icon_size=20, text_style=ft.TextStyle(size=20))
+            )
+        ]
+        
         if self.generated_pdf:
-            body_content.insert(
+            body_content_control.insert(
                 0,
                 ft.TextButton(
                     icon=ft.Icons.DOCUMENT_SCANNER,
@@ -94,6 +108,13 @@ class CallCard(ft.Container):
                     style=ft.ButtonStyle(icon_size=20, text_style=ft.TextStyle(size=20))
                 )
             ) 
+
+        body_content.insert(
+            0, 
+            ft.Row(
+                controls = body_content_control
+            )
+        )
 
         return ft.Column(controls=body_content)
     
@@ -210,3 +231,4 @@ class CallCard(ft.Container):
  
 def save_json(data,blob_client):
     blob_client.upload_blob(json.dumps(data).encode('utf-8'), overwrite=True)
+    logger.info('Storage Account successfully uploaded')

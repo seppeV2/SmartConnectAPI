@@ -62,15 +62,14 @@ async def import_endpoint(import_id: str, request: Request):
     body_raw = await request.body() 
     body = body_raw.decode('utf-8')
 
-    generated_pdf, pdf_name, body = ubl_transform(body, _timestamp)
+    generated_pdf, pdf_name, body = body_transformation(body, _timestamp)
         
     if _page is None: 
         
         _blob_data = _blob_client.download_blob()
         content = json.loads(_blob_data.read().decode('utf-8'))
         content[str(_timestamp)] = (method, _timestamp, body, generated_pdf, pdf_name, static_url, import_id)
-        
-        _blob_client.upload_blob(json.dumps(content).encode('utf-8'), overwrite=True)
+        save_json(content, _blob_client) 
 
         return {"Response": "Succesfully added to file"}
 
@@ -108,15 +107,14 @@ async def read_root(request: Request):
     body_raw = await request.body() 
     body = body_raw.decode('utf-8')
 
-    generated_pdf, pdf_name, body = ubl_transform(body, _timestamp)
+    generated_pdf, pdf_name, body = body_transformation(body, _timestamp)
         
     if _page is None: 
         
         _blob_data = _blob_client.download_blob()
         content = json.loads(_blob_data.read().decode('utf-8'))
         content[str(_timestamp)] = (method, _timestamp, body, generated_pdf, pdf_name, static_url, None)
-        
-        _blob_client.upload_blob(json.dumps(content).encode('utf-8'), overwrite=True)
+        save_json(content, _blob_client) 
 
         return {"Response": "Succesfully added to file"}
 
@@ -133,6 +131,31 @@ async def read_root(request: Request):
 
 def check_auth(username, password):
     return (_username == username) and (_password == password)
+
+def body_transformation(body, time):
+    pdf_found, file_name, body = ubl_transform(body, time)
+
+    if not pdf_found:
+        is_xml, body = transform_xml(body)
+
+        if not is_xml:
+            logger.info(f'no type recognized, raw body is used')
+
+    return pdf_found, file_name, body
+
+def transform_xml(body):
+    is_xml = False
+    try:
+        soup = BeautifulSoup(body, "xml")
+        body = create_large_prettify(soup)
+        is_xml = True
+        logger.info(f'Body transformed to XML indent')
+
+    except Exception as error: 
+        logger.info(f'Failed to transfor XML:')
+        logger.info(error)
+
+    return is_xml, body
 
 
 def ubl_transform(body, time):
@@ -196,6 +219,23 @@ def create_list_view(page, content):
     
     return list_page
     
+def refresh_body_content(e, page):
+
+    _blob_data = page.blob_client.download_blob()
+    page.content = json.loads(_blob_data.read().decode('utf-8'))
+    page.list_page = create_list_view(page, page.content)
+
+    page.views[-1].controls.clear()
+    page.views[-1].controls.append(
+        ft.Divider(thickness=3, color=ft.Colors.WHITE)
+    )
+    page.views[-1].controls.append(
+        page.list_page
+    )
+    page.update()
+    
+
+
     
 
 async def main(page: ft.Page):
@@ -207,13 +247,22 @@ async def main(page: ft.Page):
 
     logger.info("OPEN NEW PAGE")
 
-    _blob_data = _blob_client.download_blob()
+    _blob_data = page.blob_client.download_blob()
     page.content = json.loads(_blob_data.read().decode('utf-8'))
 
     _page.list_page = create_list_view(page, page.content)
 
     _appbar = ft.AppBar(
-        leading = ft.Text(),
+        leading = ft.Container(
+            content = ft.IconButton(
+                icon=ft.Icons.REFRESH,
+                icon_size=50,
+                icon_color=ft.Colors.WHITE,
+                on_click=lambda e: refresh_body_content(e, _page)
+            ),
+        margin=ft.margin.only(left=5)
+            
+        ),
         title= ft.SafeArea(
             content= ft.Text(
                 value='Smart Connect API', 
